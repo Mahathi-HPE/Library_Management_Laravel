@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Member;
 use App\Models\User;
+use App\Services\MemberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +12,10 @@ use RuntimeException;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly MemberService $memberService)
+    {
+    }
+
     public function login()
     {
         if (Auth::check()) {
@@ -65,7 +69,7 @@ class AuthController extends Controller
         $request->session()->put('role', $user->RName);
 
         if ($user->RName === 'User') {
-            $member = Member::findByUserId((int) $user->Uid);
+            $member = $this->memberService->findByUserId((int) $user->Uid);
 
             if (!$member) {
                 Auth::logout();

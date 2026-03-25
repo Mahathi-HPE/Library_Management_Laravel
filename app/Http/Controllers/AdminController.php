@@ -2,34 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book;
-use App\Models\Borrow;
-use App\Models\Member;
+use App\Services\BookService;
+use App\Services\BorrowActionService;
+use App\Services\BorrowService;
+use App\Services\MemberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
+    public function __construct(
+        private readonly BookService $bookService,
+        private readonly BorrowService $borrowService,
+        private readonly BorrowActionService $borrowActionService,
+        private readonly MemberService $memberService,
+    ) {
+    }
+
     public function dashboard()
     {
-        $this->ensureAdmin();
-
         return view('admin.dashboard');
     }
 
     public function manageUsers()
     {
-        $this->ensureAdmin();
-
-        $rows = Member::adminManageUsersTable();
+        $rows = $this->memberService->adminManageUsersTable();
 
         return view('admin.manage_users', compact('rows'));
     }
 
     public function addBook(Request $request)
     {
-        $this->ensureAdmin();
-
         if ($request->isMethod('get')) {
             return view('admin.add_book');
         }
@@ -44,113 +47,69 @@ class AdminController extends Controller
             'copies' => ['required', 'integer', 'gt:0'],
         ]);
 
-        $authorNames = array_values(array_filter(array_map('trim', explode(',', $data['authors']))));
-        $authorLocations = empty($data['author_locations'])
-            ? []
-            : array_values(array_map('trim', explode(',', $data['author_locations'])));
-        $authorEmails = empty($data['author_emails'])
-            ? []
-            : array_values(array_map('trim', explode(',', $data['author_emails'])));
+        $result = $this->bookService->addBook($data);
 
-        if (!empty($authorLocations) && count($authorLocations) !== count($authorNames)) {
-            return back()->with('error', 'Author locations must match the number of author names.')->withInput();
+        if (!$result['success']) {
+            return back()->with('error', $result['message'])->withInput();
         }
-
-        if (!empty($authorEmails) && count($authorEmails) !== count($authorNames)) {
-            return back()->with('error', 'Author emails must match the number of author names.')->withInput();
-        }
-
-        $authors = [];
-        foreach ($authorNames as $index => $name) {
-            $email = $authorEmails[$index] ?? '';
-            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                return back()->with('error', 'Please enter valid author emails.')->withInput();
-            }
-
-            $key = strtolower($name);
-            if (!isset($authors[$key])) {
-                $authors[$key] = [
-                    'name' => $name,
-                    'location' => $authorLocations[$index] ?? 'Unknown',
-                    'email' => $email,
-                ];
-            }
-        }
-
-        Book::addBookWithAuthorsAndCopies($data, array_values($authors));
 
         return redirect()->route('admin.dashboard')->with('message', 'Book added successfully.');
     }
 
     public function monitorFines()
     {
-        $this->ensureAdmin();
-
-        $rows = Borrow::adminFineTable();
+        $rows = $this->borrowService->adminFineTable();
 
         return view('admin.monitor_fines', compact('rows'));
     }
 
     public function manageRequests()
     {
-        $this->ensureAdmin();
-
-        $requests = Borrow::pendingBorrowRequests();
+        $requests = $this->borrowService->pendingBorrowRequests();
 
         return view('admin.manage_requests', compact('requests'));
     }
 
     public function approveRequest(Request $request): RedirectResponse
     {
-        $this->ensureAdmin();
-
         $borrowId = (int) $request->input('borrow_id');
-        if ($borrowId <= 0) {
-            return back()->with('error', 'Invalid request.');
+        $result = $this->borrowActionService->approveBorrowRequest($borrowId);
+
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
 
-        if (!Borrow::approveBorrowRequest($borrowId)) {
-            return back()->with('error', 'Failed to approve request. Check availability.');
-        }
-
-        return back()->with('message', 'Request approved successfully.');
+        return back()->with('message', $result['message']);
     }
 
     public function rejectRequest(Request $request): RedirectResponse
     {
-        $this->ensureAdmin();
-
         $borrowId = (int) $request->input('borrow_id');
-        if (!Borrow::rejectBorrowRequest($borrowId)) {
-            return back()->with('error', 'Invalid request.');
+        $result = $this->borrowActionService->rejectBorrowRequest($borrowId);
+
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
 
-        return back()->with('message', 'Request rejected.');
+        return back()->with('message', $result['message']);
     }
 
     public function manageReturns()
     {
-        $this->ensureAdmin();
-
-        $returns = Borrow::pendingReturnRequests();
+        $returns = $this->borrowService->pendingReturnRequests();
 
         return view('admin.manage_returns', compact('returns'));
     }
 
     public function approveReturn(Request $request): RedirectResponse
     {
-        $this->ensureAdmin();
-
         $borrowId = (int) $request->input('borrow_id');
-        if (!Borrow::approveReturnRequest($borrowId)) {
-            return back()->with('error', 'Invalid return.');
+        $result = $this->borrowActionService->approveReturnRequest($borrowId);
+
+        if (!$result['success']) {
+            return back()->with('error', $result['message']);
         }
 
-        return back()->with('message', 'Return approved successfully.');
-    }
-
-    private function ensureAdmin(): void
-    {
-        abort_unless((string) session('role') === 'Admin', 403);
+        return back()->with('message', $result['message']);
     }
 }

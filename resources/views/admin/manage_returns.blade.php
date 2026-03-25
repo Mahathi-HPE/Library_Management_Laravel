@@ -1,5 +1,8 @@
-@php($title = 'Manage Return Requests')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Manage Return Requests')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Manage Return Requests</h3>
@@ -44,4 +47,4 @@
     </table>
 </div>
 
-@include('layout.footer')
+@endsection

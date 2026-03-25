@@ -1,5 +1,8 @@
-@php($title = 'My Requests')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'My Requests')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>My Requests</h3>
@@ -40,4 +43,4 @@
     </table>
 </div>
 
-@include('layout.footer')
+@endsection

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,23 +30,33 @@ class Copy extends Model
         return $this->hasMany(Borrow::class, 'Cid', 'Cid');
     }
 
+    public function scopeAvailable(Builder $query): Builder
+    {
+        return $query->where('Status', 'Available');
+    }
+
+    public function scopeWithoutActiveBorrows(Builder $query): Builder
+    {
+        return $query->whereNotExists(function ($subQuery): void {
+            $subQuery->from('Borrows')
+                ->whereColumn('Borrows.Cid', 'Copies.Cid')
+                ->where(function ($active): void {
+                    $active->where('Borrows.BorrowStatus', 'Pending')
+                        ->orWhere(function ($approved): void {
+                            $approved->where('Borrows.BorrowStatus', 'Approved')
+                                ->where('Borrows.ReturnStatus', '!=', 'Approved');
+                        });
+                })
+                ->selectRaw('1');
+        });
+    }
+
     public static function findAvailableCopyIds(int $bid, int $limit): array
     {
         return self::query()
             ->where('Bid', $bid)
-            ->where('Status', 'Available')
-            ->whereNotExists(function ($query): void {
-                $query->from('Borrows')
-                    ->whereColumn('Borrows.Cid', 'Copies.Cid')
-                    ->where(function ($active): void {
-                        $active->where('Borrows.BorrowStatus', 'Pending')
-                            ->orWhere(function ($approved): void {
-                                $approved->where('Borrows.BorrowStatus', 'Approved')
-                                    ->where('Borrows.ReturnStatus', '!=', 'Approved');
-                            });
-                    })
-                    ->selectRaw('1');
-            })
+            ->available()
+            ->withoutActiveBorrows()
             ->limit($limit)
             ->pluck('Cid')
             ->all();

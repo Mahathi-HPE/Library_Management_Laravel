@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
@@ -41,13 +42,41 @@ class Borrow extends Model
         return $this->belongsTo(Book::class, 'Bid', 'Bid');
     }
 
+    public function scopeForMember(Builder $query, int $mid): Builder
+    {
+        return $query->where('Mid', $mid);
+    }
+
+    public function scopeInMonth(Builder $query, int $month, int $year): Builder
+    {
+        return $query
+            ->whereMonth('Bdate', $month)
+            ->whereYear('Bdate', $year);
+    }
+
+    public function scopeWithBorrowStatuses(Builder $query, array $statuses): Builder
+    {
+        return $query->whereIn('BorrowStatus', $statuses);
+    }
+
+    public function scopePendingBorrow(Builder $query): Builder
+    {
+        return $query->where('Borrows.BorrowStatus', 'Pending');
+    }
+
+    public function scopePendingReturn(Builder $query): Builder
+    {
+        return $query->where('Borrows.ReturnStatus', 'Pending');
+    }
+
     public static function borrowedThisMonth(int $mid): int
     {
+        $now = Carbon::now();
+
         return self::query()
-            ->where('Mid', $mid)
-            ->whereMonth('Bdate', Carbon::now()->month)
-            ->whereYear('Bdate', Carbon::now()->year)
-            ->whereIn('BorrowStatus', ['Pending', 'Approved'])
+            ->forMember($mid)
+            ->inMonth($now->month, $now->year)
+            ->withBorrowStatuses(['Pending', 'Approved'])
             ->count();
     }
 
@@ -172,7 +201,7 @@ class Borrow extends Model
         return self::query()
             ->join('Members', 'Members.Mid', '=', 'Borrows.Mid')
             ->join('Books', 'Books.Bid', '=', 'Borrows.Bid')
-            ->where('Borrows.BorrowStatus', 'Pending')
+            ->pendingBorrow()
             ->select('Borrows.*', 'Members.MemName', 'Books.Title')
             ->orderBy('Borrows.BorrowId')
             ->get();
@@ -183,7 +212,7 @@ class Borrow extends Model
         return self::query()
             ->join('Members', 'Members.Mid', '=', 'Borrows.Mid')
             ->join('Books', 'Books.Bid', '=', 'Borrows.Bid')
-            ->where('Borrows.ReturnStatus', 'Pending')
+            ->pendingReturn()
             ->select('Borrows.*', 'Members.MemName', 'Books.Title')
             ->orderBy('Borrows.BorrowId')
             ->get();

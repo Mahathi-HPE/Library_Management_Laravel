@@ -1,5 +1,8 @@
-@php($title = 'Admin Dashboard')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Admin Dashboard')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Admin Dashboard</h3>
@@ -24,4 +27,4 @@
     <a href="{{ route('admin.monitorFines') }}" class="list-group-item list-group-item-action">Monitor Fines</a>
 </div>
 
-@include('layout.footer')
+@endsection

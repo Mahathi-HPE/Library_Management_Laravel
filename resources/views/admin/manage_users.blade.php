@@ -1,5 +1,8 @@
-@php($title = 'Manage Users')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Manage Users')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Manage Users</h3>
@@ -35,4 +38,4 @@
     </table>
 </div>
 
-@include('layout.footer')
+@endsection

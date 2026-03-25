@@ -1,5 +1,8 @@
-@php($title = 'Add New Book')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Add New Book')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Add New Book</h3>
@@ -49,4 +52,4 @@
     <button class="btn btn-primary">Add Book</button>
 </form>
 
-@include('layout.footer')
+@endsection

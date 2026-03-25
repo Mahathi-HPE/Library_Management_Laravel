@@ -1,5 +1,8 @@
-@php($title = 'Currently Borrowed Books')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Currently Borrowed Books')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Currently Borrowed Books</h3>
@@ -37,4 +40,4 @@
     </table>
 </div>
 
-@include('layout.footer')
+@endsection

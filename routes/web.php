@@ -17,7 +17,7 @@ Route::prefix('auth')->name('auth.')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::prefix('admin')->name('admin.')->group(function (): void {
+Route::prefix('admin')->name('admin.')->middleware('ensure.admin')->group(function (): void {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::match(['get', 'post'], '/books/add', [AdminController::class, 'addBook'])->name('addBook');
     Route::get('/users', [AdminController::class, 'manageUsers'])->name('manageUsers');
@@ -29,7 +29,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::post('/returns/approve', [AdminController::class, 'approveReturn'])->name('approveReturn');
 });
 
-Route::prefix('member')->name('member.')->group(function (): void {
+Route::prefix('member')->name('member.')->middleware('ensure.member')->group(function (): void {
     Route::get('/dashboard', [MemberController::class, 'dashboard'])->name('dashboard');
     Route::get('/books', [MemberController::class, 'books'])->name('books');
     Route::post('/books/request', [MemberController::class, 'requestBook'])->name('requestBook');

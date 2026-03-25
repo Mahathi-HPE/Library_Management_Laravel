@@ -1,5 +1,8 @@
-@php($title = 'Login')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Login')
+
+@section('content')
 
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
@@ -37,4 +40,4 @@
     </div>
 </div>
 
-@include('layout.footer')
+@endsection

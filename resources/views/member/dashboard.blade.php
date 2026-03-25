@@ -1,5 +1,8 @@
-@php($title = 'Member Dashboard')
-@include('layout.header')
+@extends('layout.app')
+
+@section('page_title', 'Member Dashboard')
+
+@section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Member Dashboard</h3>
@@ -17,4 +20,4 @@
     <a href="{{ route('member.history') }}" class="list-group-item list-group-item-action">History</a>
 </div>
 
-@include('layout.footer')
+@endsection
